@@ -85,13 +85,13 @@
         <DCCReference Include="MainTeste.pas">
             <Form>Form7</Form>
         </DCCReference>
-        <DCCReference Include="src\FluentSQLConventions.pas"/>
-        <DCCReference Include="src\FluentSQLExceptions.pas"/>
-        <DCCReference Include="src\FluentSQLInterfaces.pas"/>
-        <DCCReference Include="src\FluentSQL.pas"/>
-        <DCCReference Include="src\FluentSQLTypes.pas"/>
-        <DCCReference Include="src\FluentSQLUtils.pas"/>
-        <DCCReference Include="src\FluentSQLWhere.pas"/>
+        <DCCReference Include="..\src\FluentSQLConventions.pas"/>
+        <DCCReference Include="..\src\FluentSQLExceptions.pas"/>
+        <DCCReference Include="..\src\FluentSQLInterfaces.pas"/>
+        <DCCReference Include="..\src\FluentSQL.pas"/>
+        <DCCReference Include="..\src\FluentSQLTypes.pas"/>
+        <DCCReference Include="..\src\FluentSQLUtils.pas"/>
+        <DCCReference Include="..\src\FluentSQLWhere.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

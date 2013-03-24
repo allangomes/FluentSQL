@@ -3,13 +3,13 @@ program ProjFluentSQL;
 uses
   Vcl.Forms,
   MainTeste in 'MainTeste.pas' {Form7},
-  FluentSQLConventions in 'src\FluentSQLConventions.pas',
-  FluentSQLExceptions in 'src\FluentSQLExceptions.pas',
-  FluentSQLInterfaces in 'src\FluentSQLInterfaces.pas',
-  FluentSQL in 'src\FluentSQL.pas',
-  FluentSQLTypes in 'src\FluentSQLTypes.pas',
-  FluentSQLUtils in 'src\FluentSQLUtils.pas',
-  FluentSQLWhere in 'src\FluentSQLWhere.pas';
+  FluentSQLConventions in '..\src\FluentSQLConventions.pas',
+  FluentSQLExceptions in '..\src\FluentSQLExceptions.pas',
+  FluentSQLInterfaces in '..\src\FluentSQLInterfaces.pas',
+  FluentSQL in '..\src\FluentSQL.pas',
+  FluentSQLTypes in '..\src\FluentSQLTypes.pas',
+  FluentSQLUtils in '..\src\FluentSQLUtils.pas',
+  FluentSQLWhere in '..\src\FluentSQLWhere.pas';
 
 {$R *.res}
 
