@@ -14,7 +14,7 @@ type
   TConditionOperator = (Equal, GranThan, LessThan, Like, GranThanOrEqual, LessThanOrEqual);
   TValueEmpty = (DidEmpty, IgnoreEmpty, ExceptEmpty, SetNull);
   TExecSqlOptions = (CreateTransaction, UseTransaction, ExecuteDirect);
-  TTypeJoin = (Inner, Left, Outher);
+  TTypeJoin = (tjInner=1, tjLeft=2, tjOuter=3);
   TSQLOperation = (soSelect, soInsert, soUpdate, soDelete);
 
 implementation

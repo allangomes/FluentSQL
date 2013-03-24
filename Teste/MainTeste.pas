@@ -49,7 +49,6 @@ uses FluentSQL, Dialogs, DateUtils, FluentSQLTypes;
 
 procedure TForm7.Button1Click(Sender: TObject);
 begin
-  ReportMemoryLeaksOnShutdown := True;
   Memo1.Text := TSQL.Select('CLIENTE.ID, CLIENTE.NOME, CLIENTE.CIDADE_ID, CIDADE.NOME')
                     .From('CLIENTE')
                     .Inner('CIDADE', 'CID')

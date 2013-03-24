@@ -12,7 +12,8 @@ interface
 
 uses
   DB, Classes, FluentSQLWhere, SysUtils, StrUtils,
-  FluentSQLInterfaces, FluentSQLTypes, SqlExpr, DBXCommon;
+  FluentSQLInterfaces, FluentSQLTypes, SqlExpr
+  {$IFDEF COMPILERVERSION > 20},DBXCommon{$ENDIF};
 
 type
   TFrom = class
@@ -36,7 +37,7 @@ type
     FQuery: TSQLQuery;
     FOperation: TSQLOperation;
     procedure SetFieldsJoin;
-    function Join(Table: string; Alias: string; TypeJoin: TTypeJoin): IJoinSQL;
+    function Join(Table: string; Alias: string; const TypeJoin: TTypeJoin): IJoinSQL;
     procedure ExceptionEmptyValue(Field: string; Value: Variant; ValueEmpty: TValueEmpty);
   protected
     function Select(Fields: string): ISelectSQL;
@@ -62,7 +63,7 @@ type
     {*** IFromSQL, IJoinSQL ***}
     function Inner(Table: string; Alias: string = ''): IJoinSQL;
     function Left(Table: string; Alias: string = ''): IJoinSQL;
-    function Outher(Table: string; Alias: string = ''): IJoinSQL;
+    function Outer(Table: string; Alias: string = ''): IJoinSQL;
 
     {*** IJoinSQL ***}
     function IJoinSQL_Eq(FieldInner: string; FieldFrom: string): IJoinSQL;
@@ -217,10 +218,11 @@ end;
 procedure TFluentSQL.ExecSQL(ExecOptions: TExecSqlOptions);
 var
   Qry: TSQLQuery;
-  Trans: TDBXTransaction;
+  {$IFDEF COMPILERVERSION > 20}Trans: TDBXTransaction;{$ENDIF}
 begin
   Qry := Query;
   try
+    {$IFDEF COMPILERVERSION > 20}
     if ExecOptions = CreateTransaction then
     begin
       Trans := Qry.SQLConnection.BeginTransaction;
@@ -231,6 +233,7 @@ begin
       end;
     end
     else
+    {$ENDIF}
       Qry.ExecSQL(ExecOptions = ExecuteDirect);
   finally
     Qry.Free;
@@ -307,9 +310,9 @@ const
   FORMAT_FIELD = '%s.%s';
   FORMAT_CONDITION = '%s = %s';
 begin
-  if not ContainsText(FieldInner, '.') then
+  if not Pos('.', FieldInner) > 0 then
     FieldInner := Format(FORMAT_FIELD, [FCurrentJoin.FromName, FieldInner]);
-  if not ContainsText(FieldFrom, '.') then
+  if not Pos('.', FieldFrom) > 0 then
     FieldFrom := Format(FORMAT_FIELD, [FFrom.FromName, FieldFrom]);
   FCurrentFieldsJoin.Add(Format(FORMAT_CONDITION, [FieldInner, FieldFrom]));
   Result := Self;
@@ -339,7 +342,7 @@ end;
 
 function TFluentSQL.Inner(Table, Alias: string): IJoinSQL;
 begin
-  Result := Join(Table, Alias, TTypeJoin.Inner);
+  Result := Join(Table, Alias, tjInner);
 end;
 
 function TFluentSQL.Insert(Table: string): IInsertSQL;
@@ -369,7 +372,7 @@ begin
   FFields.Add(Format(FORMAT_SET, [Field, VarToSQL(Value, ValueEmpty)]));
 end;
 
-function TFluentSQL.Join(Table, Alias: string; TypeJoin: TTypeJoin): IJoinSQL;
+function TFluentSQL.Join(Table, Alias: string; const TypeJoin: TTypeJoin): IJoinSQL;
 const
   JoinStr = '%s JOIN %s %s ON (#FIELDS#)';
 var
@@ -377,9 +380,9 @@ var
 begin
   SetFieldsJoin;
   case TypeJoin of
-    TTypeJoin.Inner: TypeJoinStr := 'INNER';
-    TTypeJoin.Left: TypeJoinStr := 'LEFT';
-    TTypeJoin.Outher: TypeJoinStr := 'OUTHER';
+    tjInner: TypeJoinStr := 'INNER';
+    tjLeft: TypeJoinStr := 'LEFT';
+    tjOuter: TypeJoinStr := 'OUTER';
   end;
   FCurrentJoin.Table := Table;
   FCurrentJoin.Alias := Alias;
@@ -389,7 +392,7 @@ end;
 
 function TFluentSQL.Left(Table, Alias: string): IJoinSQL;
 begin
-  Result := Join(Table, Alias, TTypeJoin.Left);
+  Result := Join(Table, Alias, tjLeft);
 end;
 
 function TFluentSQL.Lk(Field: string): IWhereSQL;
@@ -449,9 +452,9 @@ begin
   Result := Self;
 end;
 
-function TFluentSQL.Outher(Table, Alias: string): IJoinSQL;
+function TFluentSQL.Outer(Table, Alias: string): IJoinSQL;
 begin
-  Result := Join(Table, Alias, TTypeJoin.Outher);
+  Result := Join(Table, Alias, tjOuter);
 end;
 
 function TFluentSQL.Query: TSQLQuery;

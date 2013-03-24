@@ -66,7 +66,7 @@ type
     function Eq(FieldInner: string; FieldFrom: string): IJoinSQL;
     function Inner(Table: string; Alias: string): IJoinSQL;
     function Left(Table: string; Alias: string): IJoinSQL;
-    function Outher(Table: string; Alias: string): IJoinSQL;
+    function Outer(Table: string; Alias: string): IJoinSQL;
     function Where: IWhereSQL;
     function Group(Fields: string): IGroupSQL;
     function Order(Fields: string): IOrderSQL;
@@ -76,7 +76,7 @@ type
   ['{008603FF-1186-4242-93A9-8CCBEEB132E5}']
     function Inner(Table: string; Alias: string = ''): IJoinSQL;
     function Left(Table: string; Alias: string = ''): IJoinSQL;
-    function Outher(Table: string; Alias: string = ''): IJoinSQL;
+    function Outer(Table: string; Alias: string = ''): IJoinSQL;
     function Where: IWhereSQL;
     function Group(Fields: string): IGroupSQL;
     function Order(Fields: string): IOrderSQL;
@@ -112,7 +112,7 @@ type
     function Where: IWhereSQL;
     function Inner(Table: string; Alias: string = ''): IJoinSQL;
     function Left(Table: string; Alias: string = ''): IJoinSQL;
-    function Outher(Table: string; Alias: string = ''): IJoinSQL;
+    function Outer(Table: string; Alias: string = ''): IJoinSQL;
   end;
 
 implementation
