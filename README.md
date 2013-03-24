@@ -1,6 +1,20 @@
 FluentSQL
 =========
 
+Compatibilidade
+----------------
+    Delphi 7
+    Delphi 8
+    Delphi 2005
+    Delphi 2006
+    Delphi 2007
+    Delphi 2007
+    Delphi 2009
+    Delphi 2010
+    Delphi XE
+    Delphi XE2
+    Delphi XE3
+
 SELECT
 --------
     TSQL.Select('CLIENTE.ID, CLIENTE.NOME, CLIENTE.CIDADE_ID, CIDADE.NOME')
