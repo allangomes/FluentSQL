@@ -15,6 +15,7 @@ uses
 
 function EmptyValue(Value: Variant): Boolean;
 function VarToSQL(Value: Variant; ValueEmpty: TValueEmpty): string;
+procedure CatIfTrue(var Text: string; Condition: Boolean; TextAdd: string);
 
 implementation
 
@@ -50,6 +51,12 @@ begin
                                [Param('Value', VarToStr(Value))],
                                '',
                                'Tipo de Valor não implementado. '+ VarTypeAsText(VarType(Value)));
+end;
+
+procedure CatIfTrue(var Text: string; Condition: Boolean; TextAdd: string);
+begin
+  if Condition then
+    Text := Text + TextAdd;
 end;
 
 end.

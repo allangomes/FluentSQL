@@ -330,7 +330,10 @@ var
   InValues: string;
 begin
   for I := Low(Values) to High(Values) do
-    InValues := InValues + System.StrUtils.IfThen(InValues <> EmptyStr, ',') + VarToSQL(Values[I], IgnoreEmpty);
+  begin
+    CatIfTrue(InValues, InValues <> EmptyStr, ',');
+    InValues := InValues + VarToSQL(Values[I], IgnoreEmpty);
+  end;
   Result := Inn(Field, InValues);
 end;
 

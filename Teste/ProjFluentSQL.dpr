@@ -1,7 +1,7 @@
 program ProjFluentSQL;
 
 uses
-  Vcl.Forms,
+  Forms,
   MainTeste in 'MainTeste.pas' {Form7},
   FluentSQLConventions in '..\src\FluentSQLConventions.pas',
   FluentSQLExceptions in '..\src\FluentSQLExceptions.pas',
