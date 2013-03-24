@@ -12,6 +12,7 @@ SELECT
           .Eq('CLIENTE.SALARIO', 3200)
           .Eq('CLIENTE.DATANASC', EncodeDateTime(1992, 03, 01, 09, 0, 0, 0))
           .Inn('CLIENTE.ID', [1,2,3,4])
+        .Order('CLIENTE.NOME')  
         .ToSQL;
 ======== 
     SELECT CLIENTE.ID, CLIENTE.NOME, CLIENTE.CIDADE_ID, CIDADE.NOME
@@ -22,6 +23,7 @@ SELECT
       AND CLIENTE.SALARIO = 3200
       AND CLIENTE.DATANASC = '03/01/1992 09:00:00'
       AND CLIENTE.ID IN (1,2,3,4)
+    ORDER BY CLIENTE.NOME
 ________
 
 INSERT
