@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<codetemplate	xmlns="http://schemas.borland.com/Delphi/2005/codetemplates"
+				version="1.0.0">
+	<template name="Left" invoke="auto">
+		<description>
+            Criar Select usando FluentSQL.
+		</description>
+		<author>
+			Allan Gomes
+		</author>
+        <point name="table">
+            <text>
+                TABLE
+            </text>
+            <hint>
+                Table Name
+            </hint>
+        </point>
+        <point name="fieldLeft">
+            <text>
+                ID
+            </text>
+            <hint>
+                Field of Table Join
+            </hint>
+        </point>
+        <point name="fieldRigth">
+            <text>
+                TABLE_ID
+            </text>
+            <hint>
+                Field ForeingKey
+            </hint>
+        </point>
+        <script language="Delphi" onenter="false" onleave="true">
+          InvokeClassCompletion;
+		</script>
+		<code language="Delphi" delimiter="|"><![CDATA[
+.Left('|table|').Eq('|fieldLeft|', '|fieldRigth|')
+|end|
+]]>
+		</code>
+	</template>
+</codetemplate>

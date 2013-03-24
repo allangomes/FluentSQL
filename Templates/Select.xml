@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<codetemplate	xmlns="http://schemas.borland.com/Delphi/2005/codetemplates"
+				version="1.0.0">
+	<template name="Select" invoke="auto">
+		<description>
+            Criar Select usando FluentSQL.
+		</description>
+		<author>
+			Allan Gomes
+		</author>
+        <point name="fields">
+            <text>
+                Fields
+            </text>
+            <hint>
+                Fields Select
+            </hint>
+        </point>
+        <point name="table">
+            <text>
+                Table
+            </text>
+            <hint>
+                Table Name
+            </hint>
+        </point>
+        <script language="Delphi" onenter="false" onleave="true">
+          InvokeClassCompletion;
+		</script>
+		<code language="Delphi" delimiter="|"><![CDATA[
+TSQL.Select('|fields|')
+    .From('|table|')
+    |end|
+]]>
+		</code>
+	</template>
+</codetemplate>
