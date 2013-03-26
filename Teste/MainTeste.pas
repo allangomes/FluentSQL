@@ -45,25 +45,36 @@ implementation
 
 {$R *.dfm}
 
-uses FluentSQL, Dialogs, DateUtils, FluentSQLTypes;
+uses FluentSQL, Dialogs, DateUtils, FluentSQLTypes, FluentSQLInterfaces, sqlExpr, 
+  FluentSQLConventions;
 
 procedure TForm7.Button1Click(Sender: TObject);
+var
+  SQL: IOrderSQL;
 begin
   Memo1.Text := TSQL.Select('CLIENTE.ID, CLIENTE.NOME, CLIENTE.CIDADE_ID, CIDADE.NOME')
                     .From('CLIENTE')
-                    .Inner('CIDADE', 'CID')
                     .Where
                         .Eq('CLIENTE.CARGO', 'DESENVOLVEDOR')
                         .Eq('CLIENTE.IDADE', 21)
                         .Eq('CLIENTE.SALARIO', 3200)
                         .Eq('CLIENTE.DATANASC', EncodeDateTime(1992, 03, 01, 09, 0, 0, 0))
                         .Inn('CLIENTE.ID', [1,2,3,4])
-                    .Order('CLIENTE.NOME')
-                    .ToSQL;
+                    .Order('CLIENTE.NOME').ToSQL;
+                                        
 end;
 
-procedure TForm7.Button2Click(Sender: TObject);
+procedure FiltraDados(SQL: IWhereSQL; ClienteMaiorDeIdade: Boolean; ClienteIdoso: Boolean);
 begin
+  if ClienteMaiorDeIdade then
+    SQL.GtOrEq('CLIENTE.IDADE', 18)
+  else if ClienteIdoso then
+    SQL.GtOrEq('CLIENTE.IDADE', 65);
+end;
+
+
+procedure TForm7.Button2Click(Sender: TObject);
+begin          
   Memo1.Text := TSQL.Select('CLIENTE.ID, CLIENTE.NOME, CLIENTE.CIDADE_ID, CIDADE.NOME')
                     .From('CLIENTE')
                     .Left('CIDADE')
@@ -82,6 +93,7 @@ end;
 
 procedure TForm7.Button3Click(Sender: TObject);
 begin
+
   Memo1.Text := TSQL.Update('CLIENTE')
                       .Value('NOME', 'Allan Maia Gomes')
                       .Value('IDADE', 21)
@@ -116,11 +128,22 @@ end;
 
 procedure TForm7.Button7Click(Sender: TObject);
 begin
-  Memo1.Text :=TSQL.Delete('CLIENTE')
-      .Where
-         .Inn('ID', [1,2,3,4,5,6,7])
-      .ToSQL;
-
+  Memo1.Text := TSQL.Delete('CLIENTE')
+                    .Where
+                      .Inn('ID', [1,2,3,4,5,6,7])
+                    .ToSQL;
 end;
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+

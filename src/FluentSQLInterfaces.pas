@@ -64,9 +64,10 @@ type
   IJoinSQL = interface(IBaseSQL)
   ['{8AE812F6-4EC9-4EBC-9AF9-58ACE4E47B9F}']
     function Eq(FieldInner: string; FieldFrom: string): IJoinSQL;
-    function Inner(Table: string; Alias: string): IJoinSQL;
-    function Left(Table: string; Alias: string): IJoinSQL;
-    function Outer(Table: string; Alias: string): IJoinSQL;
+    function Inner(Table: string; Alias: string = ''): IJoinSQL;
+    function Left(Table: string; Alias: string = ''): IJoinSQL;
+    function Outer(Table: string; Alias: string = ''): IJoinSQL;
+    function Right(Table: string; Alias: string = ''): IJoinSQL;
     function Where: IWhereSQL;
     function Group(Fields: string): IGroupSQL;
     function Order(Fields: string): IOrderSQL;
@@ -77,6 +78,7 @@ type
     function Inner(Table: string; Alias: string = ''): IJoinSQL;
     function Left(Table: string; Alias: string = ''): IJoinSQL;
     function Outer(Table: string; Alias: string = ''): IJoinSQL;
+    function Right(Table: string; Alias: string = ''): IJoinSQL;
     function Where: IWhereSQL;
     function Group(Fields: string): IGroupSQL;
     function Order(Fields: string): IOrderSQL;

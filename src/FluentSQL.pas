@@ -64,6 +64,7 @@ type
     function Inner(Table: string; Alias: string = ''): IJoinSQL;
     function Left(Table: string; Alias: string = ''): IJoinSQL;
     function Outer(Table: string; Alias: string = ''): IJoinSQL;
+    function Right(Table: string; Alias: string = ''): IJoinSQL;
 
     {*** IJoinSQL ***}
     function IJoinSQL_Eq(FieldInner: string; FieldFrom: string): IJoinSQL;
@@ -382,7 +383,8 @@ begin
   case TypeJoin of
     tjInner: TypeJoinStr := 'INNER';
     tjLeft: TypeJoinStr := 'LEFT';
-    tjOuter: TypeJoinStr := 'OUTER';
+    tjOuter: TypeJoinStr := 'FULL OUTER';
+    tjRight: TypeJoinStr := 'RIGHT';
   end;
   FCurrentJoin.Table := Table;
   FCurrentJoin.Alias := Alias;
@@ -466,6 +468,11 @@ begin
   end;
   FQuery.SQL.Text := ToSQL;
   Result := FQuery;
+end;
+
+function TFluentSQL.Right(Table, Alias: string): IJoinSQL;
+begin
+  Result := Join(Table, Alias, tjRight);
 end;
 
 function TFluentSQL.Select(Fields: string): ISelectSQL;
