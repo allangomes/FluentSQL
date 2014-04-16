@@ -15,12 +15,16 @@ uses
 
 function EmptyValue(Value: Variant): Boolean;
 function VarToSQL(Value: Variant; ValueEmpty: TValueEmpty): string;
+function VarToBool(Value: Variant): Boolean;
+function BoolToInt(Value: Boolean): Integer;
+function BoolToSQL(Value: Boolean): string;
 procedure CatIfTrue(var Text: string; Condition: Boolean; TextAdd: string);
 
 implementation
 
 uses
-  FluentSQLConventions, SysUtils, FluentSQLExceptions;
+  FluentSQLConventions, SysUtils, FluentSQLExceptions,
+  Math, StrUtils;
 
 function EmptyValue(Value: Variant): Boolean;
 begin
@@ -33,19 +37,43 @@ begin
     Result := VarToStr(Value) = '0';
 end;
 
-function VarToSQL(Value: Variant; ValueEmpty: TValueEmpty): string;
+function VarToBool(Value: Variant): Boolean;
 begin
-  if (ValueEmpty = SetNull) and EmptyValue(Value) then
+  Result:= StrToBool(VarToStr(Value));
+end;
+
+function BoolToInt(Value: Boolean): Integer;
+const
+  cSimpleBoolInt: array [boolean] of Integer = (0, 1);
+begin
+  Result:= cSimpleBoolInt[Value];
+end;
+
+function BoolToSQL(Value: Boolean): string;
+begin
+  Result:= IntToStr(BoolToInt(Value));
+end;
+
+function VarToSQL(Value: Variant; ValueEmpty: TValueEmpty): string;
+var
+  DateValue: TDateTime;
+begin
+  if (ValueEmpty = veSetNull) and EmptyValue(Value) then
   begin
     Result := 'NULL';
     Exit;
   end;
+
   if VarType(Value) = varDate then
-    Result := QuotedStr(FormatDateTime(SQLConventions.FormatDateTimeSQL, VarToDateTime(Value)))
-  else if VarIsStr(Value) then
+  begin
+    DateValue := VarToDateTime(Value);
+    Result := QuotedStr(FormatDateTime(SQLConventions.FormatDateSQL, DateValue) + IfThen(DateValue <> Trunc(DateValue),' '+TimeToStr(DateValue)));
+  end else if VarIsStr(Value) then
     Result := QuotedStr(VarToStr(Value))
+  else if VarType(Value) = varBoolean  then
+    Result := BoolToSQL(VarToBool(Value))
   else if VarIsNumeric(Value) then
-    Result := VarToStr(Value)
+    Result:=StringReplace(FloatToStr(Value),DecimalSeparator,'.',[rfReplaceAll,rfIgnoreCase])
   else
     raise ESQLException.Create('VarToSQL',
                                [Param('Value', VarToStr(Value))],

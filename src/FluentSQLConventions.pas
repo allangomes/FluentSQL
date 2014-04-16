@@ -12,14 +12,14 @@ interface
 
 const
   VAR_TABLE = '$(TABLE)';
-  DEFALT_FORMAT_DATETIMESQL = 'MM/dd/yyyy hh:mm:ss';
+  DEFALT_FORMAT_DATESQL = 'MM/dd/yyyy';
   DEFAULT_PRIMARYKEY_NAME = 'ID';
   DEFAULT_FOREINGKEY_NAME = VAR_TABLE + '_ID';
 
 type
   TSQLConventions = class
   public
-    FormatDateTimeSQL: string;
+    FormatDateSQL: string;
     PrimaryKeyName: string;
     ForeingKeyName: string;
     procedure Default;
@@ -34,7 +34,7 @@ implementation
 
 procedure TSQLConventions.Default;
 begin
-  FormatDateTimeSQL := DEFALT_FORMAT_DATETIMESQL;
+  FormatDateSQL := DEFALT_FORMAT_DATESQL;
   PrimaryKeyName := DEFAULT_PRIMARYKEY_NAME;
   ForeingKeyName := DEFAULT_FOREINGKEY_NAME;
 end;

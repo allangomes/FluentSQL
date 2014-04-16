@@ -13,7 +13,7 @@ interface
 uses
   DB, Classes, FluentSQLWhere, SysUtils, StrUtils,
   FluentSQLInterfaces, FluentSQLTypes, SqlExpr
-  {$IFDEF COMPILERVERSION > 20},DBXCommon{$ENDIF};
+  {$IFDEF COMPILERVERSION > 20},DBXCommon{$ENDIF}, FluentSQLUnion;
 
 type
   TFrom = class
@@ -25,6 +25,7 @@ type
 
   TFluentSQL = class(TInterfacedObject, IMetaDataSQL, ISelectSQL, IFromSQL, IWhereSQL, IJoinSQL, IGroupSQL, IOrderSQL, IUpdateSQL, IInsertSQL, IDeleteSQL)
   private
+    FJoinCondition: Boolean;
     FFields: TStrings;
     FInsertValues: TStrings;
     FFrom: TFrom;
@@ -34,11 +35,16 @@ type
     FWhere: TMountWhere;
     FGroup: TStrings;
     FOrder: TStrings;
-    FQuery: TSQLQuery;
     FOperation: TSQLOperation;
+    FInsertInCondition: Boolean;
+    FInsertConditon: Boolean;
+    FUpdateInCondition: Boolean;
+    FUpdateConditon: Boolean;
+    DefaultValueEmpty: TValueEmpty;
     procedure SetFieldsJoin;
     function Join(Table: string; Alias: string; const TypeJoin: TTypeJoin): IJoinSQL;
     procedure ExceptionEmptyValue(Field: string; Value: Variant; ValueEmpty: TValueEmpty);
+    function GetValueEmpty(ValueEmpty: TValueEmpty): TValueEmpty;
   protected
     function Select(Fields: string): ISelectSQL;
     function Update(Table: string): IUpdateSQL;
@@ -49,26 +55,37 @@ type
     function From(Table: string; Alias: string = ''): IFromSQL;
 
     {*** IUpdateSQL ***}
-    function IUpdateSQL_Value(Field: string; Value: Variant; ValueEmpty: TValueEmpty = SetNull): IUpdateSQL; overload;
+    function IUpdateSQL_Value(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veConsider): IUpdateSQL; overload;
     function IUpdateSQL_Param(Field: string): IUpdateSQL; overload;
+    function IUpdateSQL_IfThen(Condition: Boolean): IUpdateSQL; overload;
     function IUpdateSQL.Value = IUpdateSQL_Value;
     function IUpdateSQL.Param = IUpdateSQL_Param;
+    function IUpdateSQL.IfThen = IUpdateSQL_IfThen;
 
     {*** IInsertSQL ***}
-    function IInsertSQL_Value(Field: string; Value: Variant; ValueEmpty: TValueEmpty = SetNull): IInsertSQL; overload;
+    function IInsertSQL_Value(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veConsider): IInsertSQL; overload;
     function IInsertSQL_Param(Field: string): IInsertSQL; overload;
+    function IInsertSQL_IfThen(Condition: Boolean): IInsertSQL; overload;
     function IInsertSQL.Value = IInsertSQL_Value;
     function IInsertSQL.Param = IInsertSQL_Param;
+    function IInsertSQL.IfThen = IInsertSQL_IfThen;
 
     {*** IFromSQL, IJoinSQL ***}
     function Inner(Table: string; Alias: string = ''): IJoinSQL;
-    function Left(Table: string; Alias: string = ''): IJoinSQL;
+    function Left(Table: string; Alias: string = ''): IJoinSQL; overload;
+    function Left(Condition:Boolean; Table: string; Alias: string = ''): IJoinSQL; overload;
     function Outer(Table: string; Alias: string = ''): IJoinSQL;
     function Right(Table: string; Alias: string = ''): IJoinSQL;
 
     {*** IJoinSQL ***}
     function IJoinSQL_Eq(FieldInner: string; FieldFrom: string): IJoinSQL;
     function IJoinSQL.Eq = IJoinSQL_Eq;
+    function IJoinSQL_EqValue(FieldInner: string; Value: Variant; ValueEmpty: TValueEmpty = veDefault): IJoinSQL;
+    function IJoinSQL.EqValue = IJoinSQL_EqValue;
+    function IJoinSQL_EqSQL(FieldInner: string; SQL: string): IJoinSQL;
+    function IJoinSQL.EqSQL = IJoinSQL_EqSQL;
+    function Onn(SQLJoin: string): IJoinSQL;
+
 
     {*** IWhereSQL ***}
     function Where: IWhereSQL;
@@ -76,31 +93,32 @@ type
     function ElseIF(Condition: Boolean = True): IWhereSQL;
     function EndIF: IWhereSQL;
     function IfThen(Condition: Boolean): IWhereSQL;
+    function Nott: IWhereSQL;
     function Andd(Condition: string): IWhereSQL;
     function Inn(Field: string; Values: string): IWhereSQL; overload;
     function Inn(Field: string; Values: array of Variant): IWhereSQL; overload;
     function Eq(Field: string): IWhereSQL; overload;
     function Gt(Field: string): IWhereSQL; overload;
     function Lt(Field: string): IWhereSQL; overload;
+    function EqField(FieldLeft, FieldRight: string): IWhereSQL;
     function GtOrEq(Field: string): IWhereSQL; overload;
     function LtOrEq(Field: string): IWhereSQL; overload;
     function Lk(Field: string): IWhereSQL; overload;
-    function Eq(Field: string; Value: Variant; ValueEmpty: TValueEmpty = IgnoreEmpty): IWhereSQL; overload;
-    function Gt(Field: string; Value: Variant; ValueEmpty: TValueEmpty = IgnoreEmpty): IWhereSQL; overload;
-    function Lt(Field: string; Value: Variant; ValueEmpty: TValueEmpty = IgnoreEmpty): IWhereSQL; overload;
-    function GtOrEq(Field: string; Value: Variant; ValueEmpty: TValueEmpty = IgnoreEmpty): IWhereSQL; overload;
-    function LtOrEq(Field: string; Value: Variant; ValueEmpty: TValueEmpty = IgnoreEmpty): IWhereSQL; overload;
+    function Eq(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veDefault): IWhereSQL; overload;
+    function Gt(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veDefault): IWhereSQL; overload;
+    function Lt(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veDefault): IWhereSQL; overload;
+    function GtOrEq(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veDefault): IWhereSQL; overload;
+    function LtOrEq(Field: string; Value: Variant; ValueEmpty: TValueEmpty = veDefault): IWhereSQL; overload;
+    function LtOrEqField(Field: string; FieldValue: string): IWhereSQL; overload;
     function Between(Field: string; MinValue, MaxValue: Variant): IWhereSQL; overload;
-    function Lk(Field: string; Value: string; ValueEmpty: TValueEmpty = IgnoreEmpty): IWhereSQL; overload;
+    function Between(Value: Variant; MinField, MaxField: String): IWhereSQL; overload;
+    function Lk(Field: string; Value: string; ValueEmpty: TValueEmpty = veDefault): IWhereSQL; overload;
 
     function Group(Fields: string): IGroupSQL;
     function Order(Fields: string): IOrderSQL;
 
     {*** IBaseSQL ***}
     function ToSQL: string;
-    procedure ExecSQL(ExecOptions: TExecSqlOptions);
-    function Open: TSQLQuery;
-    function Query: TSQLQuery;
     function Metadata: IMetaDataSQL;
   public
     procedure AfterConstruction; override;
@@ -112,10 +130,9 @@ type
     class function Insert(Table: string): IInsertSQL;
     class function Update(Table: string): IUpdateSQL;
     class function Delete(Table: string): IDeleteSQL;
+    class function UnionAll(SQL: String): IUnion; overload;
+    class function UnionAll(Condition: Boolean; SQL: String): IUnion; overload;        
   end;
-
-var
-  FluentConnection: TSQLConnection;
 
 implementation
 
@@ -140,7 +157,8 @@ end;
 
 function TFluentSQL.Andd(Condition: string): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Condition);
+  if Condition <> EmptyStr then
+    FWhere.CatSQLAnd(Condition);
   Result := Self;
 end;
 
@@ -156,8 +174,6 @@ begin
   FWhere.Free;
   FGroup.Free;
   FOrder.Free;
-  if FQuery <> nil then
-    FQuery.Free;
 end;
 
 function TFluentSQL.BeginIF(Condition: Boolean): IWhereSQL;
@@ -175,6 +191,7 @@ end;
 
 function TFluentSQL.Delete(Table: string): IDeleteSQL;
 begin
+  DefaultValueEmpty := veExcept;
   FOperation := soDelete;
   FFrom.Table := Table;
   Result := Self;
@@ -198,47 +215,27 @@ begin
   Result := Self;
 end;
 
-function TFluentSQL.Eq(Field: string; Value: Variant;
-  ValueEmpty: TValueEmpty): IWhereSQL;
+function TFluentSQL.Eq(Field: string; Value: Variant; ValueEmpty: TValueEmpty): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Field, Value, Equal, ValueEmpty);
+  FWhere.CatSQLAnd(Field, Value, Equal, GetValueEmpty(ValueEmpty));
+  Result := Self;
+end;
+
+function TFluentSQL.EqField(FieldLeft, FieldRight: string): IWhereSQL;
+begin
+  FWhere.CatSQLAnd(FieldLeft, FieldRight, Equal);
   Result := Self;
 end;
 
 procedure TFluentSQL.ExceptionEmptyValue(Field: string; Value: Variant;
   ValueEmpty: TValueEmpty);
 begin
-  if (ValueEmpty = ExceptEmpty) and EmptyValue(Value) then
+  if (ValueEmpty = veExcept) and EmptyValue(Value) then
     raise ESQLValueEmpty.Create([Param('Method', 'IUpdateSQL_Value'),
                                  Param('  Field', Field),
                                  Param('  Value', Value),
                                  Param('ValueType', VarTypeAsText(VarType(Value))),
                                  Param('SQL Parcial', ToSQL)]);
-end;
-
-procedure TFluentSQL.ExecSQL(ExecOptions: TExecSqlOptions);
-var
-  Qry: TSQLQuery;
-  {$IFDEF COMPILERVERSION > 20}Trans: TDBXTransaction;{$ENDIF}
-begin
-  Qry := Query;
-  try
-    {$IFDEF COMPILERVERSION > 20}
-    if ExecOptions = CreateTransaction then
-    begin
-      Trans := Qry.SQLConnection.BeginTransaction;
-      try
-        Qry.ExecSQL;
-      finally
-        Trans.Free;
-      end;
-    end
-    else
-    {$ENDIF}
-      Qry.ExecSQL(ExecOptions = ExecuteDirect);
-  finally
-    Qry.Free;
-  end;
 end;
 
 function TFluentSQL.From(Table, Alias: string): IFromSQL;
@@ -259,7 +256,7 @@ end;
 function TFluentSQL.Gt(Field: string; Value: Variant;
   ValueEmpty: TValueEmpty): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Field, Value, GranThan, ValueEmpty);
+  FWhere.CatSQLAnd(Field, Value, GranThan, GetValueEmpty(ValueEmpty));
   Result := Self;
 end;
 
@@ -278,7 +275,7 @@ end;
 function TFluentSQL.GtOrEq(Field: string; Value: Variant;
   ValueEmpty: TValueEmpty): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Field, Value, GranThanOrEqual, ValueEmpty);
+  FWhere.CatSQLAnd(Field, Value, GranThanOrEqual, GetValueEmpty(ValueEmpty));
   Result := Self;
 end;
 
@@ -290,20 +287,28 @@ end;
 
 function TFluentSQL.IInsertSQL_Param(Field: string): IInsertSQL;
 begin
-  FFields.Add(Field);
-  FInsertValues.Add(':'+Field);
   Result := Self;
+  if (not FInsertInCondition) or (FInsertConditon) then
+  begin
+    FFields.Add(Field);
+    FInsertValues.Add(':'+Field);
+  end;
+  FInsertInCondition := False;
 end;
 
 function TFluentSQL.IInsertSQL_Value(Field: string; Value: Variant;
   ValueEmpty: TValueEmpty): IInsertSQL;
 begin
   Result := Self;
-  ExceptionEmptyValue(Field, Value, ValueEmpty);
-  if (ValueEmpty = IgnoreEmpty) and EmptyValue(Value) then
-    Exit;
-  FFields.Add(Field);
-  FInsertValues.Add(VarToSQL(Value, ValueEmpty));
+  if (not FInsertInCondition) or (FInsertConditon) then
+  begin
+    ExceptionEmptyValue(Field, Value, ValueEmpty);
+    if (ValueEmpty = veIgnore) and EmptyValue(Value) then
+      Exit;
+    FFields.Add(Field);
+    FInsertValues.Add(VarToSQL(Value, ValueEmpty));
+  end;
+  FInsertInCondition := False;    
 end;
 
 function TFluentSQL.IJoinSQL_Eq(FieldInner, FieldFrom: string): IJoinSQL;
@@ -311,21 +316,60 @@ const
   FORMAT_FIELD = '%s.%s';
   FORMAT_CONDITION = '%s = %s';
 begin
-  if not Pos('.', FieldInner) > 0 then
+  Result := Self;
+  if not FJoinCondition then
+    Exit;
+  if Pos('.', FieldInner) = 0 then
     FieldInner := Format(FORMAT_FIELD, [FCurrentJoin.FromName, FieldInner]);
-  if not Pos('.', FieldFrom) > 0 then
+  if (Pos('.', FieldFrom) = 0) and (not (FieldFrom[1] in ['0'..'9'])) then
     FieldFrom := Format(FORMAT_FIELD, [FFrom.FromName, FieldFrom]);
   FCurrentFieldsJoin.Add(Format(FORMAT_CONDITION, [FieldInner, FieldFrom]));
+end;
+
+function TFluentSQL.IJoinSQL_EqSQL(FieldInner, SQL: string): IJoinSQL;
+const
+  FORMAT_FIELD = '%s.%s';
+  FORMAT_CONDITION = '%s = %s';
+begin
   Result := Self;
+  if not FJoinCondition then
+    Exit;
+  if Pos('.', FieldInner) = 0 then
+    FieldInner := Format(FORMAT_FIELD, [FCurrentJoin.FromName, FieldInner]);
+  if SQL[1] <> '(' then
+    SQL := '('+SQL+')';
+  FCurrentFieldsJoin.Add(Format(FORMAT_CONDITION, [FieldInner, SQL]));
+end;
+
+function TFluentSQL.IJoinSQL_EqValue(FieldInner: string; Value: Variant; ValueEmpty: TValueEmpty): IJoinSQL;
+const
+  FORMAT_FIELD = '%s.%s';
+  FORMAT_CONDITION = '%s = %s';
+begin
+  Result := Self;
+  if not FJoinCondition then
+    Exit;
+  if Pos('.', FieldInner) = 0 then
+    FieldInner := Format(FORMAT_FIELD, [FCurrentJoin.FromName, FieldInner]);
+  if EmptyValue(Value) and (ValueEmpty = veIgnore) then
+    Exit
+  else if EmptyValue(Value) and (ValueEmpty = veExcept) then
+    raise ESQLValueEmpty.Create([Param('FieldInner', FieldInner),
+                                 Param('Value', Value)]);
+  FCurrentFieldsJoin.Add(Format(FORMAT_CONDITION, [FieldInner, VarToSQL(Value, ValueEmpty)]));
 end;
 
 function TFluentSQL.Inn(Field, Values: string): IWhereSQL;
 const
   FORMAT_INN = ' %s IN %s';
 begin
-  if Values[1] <> '(' then
-    Values := '('+Values+')';
-  Result := Andd(Format(FORMAT_INN, [Field, Values]));
+  Result := Self;
+  if Values <> '' then
+  begin
+    if Values[1] <> '(' then
+      Values := '('+Values+')';
+    Andd(Format(FORMAT_INN, [Field, Values]));
+  end;    
 end;
 
 function TFluentSQL.Inn(Field: string; Values: array of Variant): IWhereSQL;
@@ -336,7 +380,7 @@ begin
   for I := Low(Values) to High(Values) do
   begin
     CatIfTrue(InValues, InValues <> EmptyStr, ',');
-    InValues := InValues + VarToSQL(Values[I], IgnoreEmpty);
+    InValues := InValues + VarToSQL(Values[I], veIgnore);
   end;
   Result := Inn(Field, InValues);
 end;
@@ -348,6 +392,7 @@ end;
 
 function TFluentSQL.Insert(Table: string): IInsertSQL;
 begin
+  DefaultValueEmpty := veConsider;
   FOperation := soInsert;
   FFrom.Table := Table;
   Result := Self;
@@ -357,20 +402,25 @@ function TFluentSQL.IUpdateSQL_Param(Field: string): IUpdateSQL;
 const
   FORMAT_SET = '    %s = :%s';
 begin
-  FFields.Add(Format(FORMAT_SET, [Field, Field]));
   Result := Self;
+  if (not FUpdateInCondition) or (FUpdateConditon) then
+    FFields.Add(Format(FORMAT_SET, [Field, Field]));
+  FUpdateInCondition := False;
 end;
 
-function TFluentSQL.IUpdateSQL_Value(Field: string; Value: Variant;
-  ValueEmpty: TValueEmpty): IUpdateSQL;
+function TFluentSQL.IUpdateSQL_Value(Field: string; Value: Variant; ValueEmpty: TValueEmpty): IUpdateSQL;
 const
   FORMAT_SET = '    %s = %s';
 begin
   Result := Self;
-  ExceptionEmptyValue(Field, Value, ValueEmpty);
-  if (ValueEmpty = IgnoreEmpty) and  EmptyValue(Value) then
-    Exit;
-  FFields.Add(Format(FORMAT_SET, [Field, VarToSQL(Value, ValueEmpty)]));
+  if (not FUpdateInCondition) or (FUpdateConditon) then
+  begin
+    ExceptionEmptyValue(Field, Value, ValueEmpty);
+    if (ValueEmpty = veIgnore) and  EmptyValue(Value) then
+      Exit;
+    FFields.Add(Format(FORMAT_SET, [Field, VarToSQL(Value, ValueEmpty)]));
+  end;
+  FUpdateInCondition := False;
 end;
 
 function TFluentSQL.Join(Table, Alias: string; const TypeJoin: TTypeJoin): IJoinSQL;
@@ -379,6 +429,7 @@ const
 var
   TypeJoinStr: string;
 begin
+  FJoinCondition := True;
   SetFieldsJoin;
   case TypeJoin of
     tjInner: TypeJoinStr := 'INNER';
@@ -403,16 +454,25 @@ begin
   Result := Self;
 end;
 
+function TFluentSQL.Left(Condition: Boolean; Table,
+  Alias: string): IJoinSQL;
+begin
+  Result := Self;
+  if Condition then
+    Result := Join(Table, Alias, tjLeft);
+  FJoinCondition := Condition;
+end;
+
 function TFluentSQL.Lk(Field, Value: string; ValueEmpty: TValueEmpty): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Field, Value, Like, ValueEmpty);
+  FWhere.CatSQLAnd(Field, Value, Like, GetValueEmpty(ValueEmpty));
   Result := Self;
 end;
 
 function TFluentSQL.Lt(Field: string; Value: Variant;
   ValueEmpty: TValueEmpty): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Field, Value, LessThan, ValueEmpty);
+  FWhere.CatSQLAnd(Field, Value, LessThan, GetValueEmpty(ValueEmpty));
   Result := Self;
 end;
 
@@ -431,7 +491,13 @@ end;
 function TFluentSQL.LtOrEq(Field: string; Value: Variant;
   ValueEmpty: TValueEmpty): IWhereSQL;
 begin
-  FWhere.CatSQLAnd(Field, Value, LessThanOrEqual, ValueEmpty);
+  FWhere.CatSQLAnd(Field, Value, LessThanOrEqual, GetValueEmpty(ValueEmpty));
+  Result := Self;
+end;
+
+function TFluentSQL.LtOrEqField(Field, FieldValue: string): IWhereSQL;
+begin
+  FWhere.CatSQLAnd(Field, FieldValue, LessThanOrEqual);
   Result := Self;
 end;
 
@@ -440,10 +506,10 @@ begin
   Result := Self;
 end;
 
-function TFluentSQL.Open: TSQLQuery;
+function TFluentSQL.Onn(SQLJoin: string): IJoinSQL;
 begin
-  Query.Open;
-  Result := Query;
+  Result := Self;
+  FCurrentFieldsJoin.Add(SQLJoin);
 end;
 
 function TFluentSQL.Order(Fields: string): IOrderSQL;
@@ -459,17 +525,6 @@ begin
   Result := Join(Table, Alias, tjOuter);
 end;
 
-function TFluentSQL.Query: TSQLQuery;
-begin
-  if FQuery = nil then
-  begin
-    FQuery := TSQLQuery.Create(nil);
-    FQuery.SQLConnection := FluentConnection;
-  end;
-  FQuery.SQL.Text := ToSQL;
-  Result := FQuery;
-end;
-
 function TFluentSQL.Right(Table, Alias: string): IJoinSQL;
 begin
   Result := Join(Table, Alias, tjRight);
@@ -477,6 +532,7 @@ end;
 
 function TFluentSQL.Select(Fields: string): ISelectSQL;
 begin
+  DefaultValueEmpty := veIgnore;
   FOperation := soSelect;
   FFields.Text := Fields;
   Result := Self;
@@ -511,6 +567,9 @@ end;
 
 function TFluentSQL.ToSQL: string;
 const
+  SELECT_MOUNT = '%s';
+  FROM_MOUNT = '%s %s';
+const
   SELECT = 'SELECT %s';
   FROM = 'FROM %s %s';
   UPDATE = 'UPDATE %s SET ';
@@ -525,18 +584,18 @@ begin
     case FOperation of
       soSelect:
       begin
-        if FFields.Count > 0 then
-          Sql.Text := Sql.Text + (Format(SELECT, [FFields.Text]));
-        if FFrom.Table <> EmptyStr then
-          Sql.Add(Format(FROM, [FFrom.Table, FFrom.Alias]));
-        if FJoin.Count > 0 then
-          Sql.Text := Sql.Text + (FJoin.Text);
-        if FWhere.Count > 0 then
-          Sql.Text := Sql.Text + (FWhere.GetWhere);
-        if FGroup.Count > 0 then
-          Sql.Text := Sql.Text + (FGroup.Text);
-        if FOrder.Count > 0 then
-          Sql.Text := Sql.Text + (FOrder.Text);
+          if (FFields.Count > 0) then
+            Sql.Text := Sql.Text + (Format(SELECT, [FFields.Text]));
+          if (FFrom.Table <> EmptyStr) then
+            Sql.Add(Format(FROM, [FFrom.Table, FFrom.Alias]));
+          if (FJoin.Count > 0) then
+            Sql.Text := Sql.Text + (FJoin.Text);
+          if (FWhere.Count > 0) then
+            Sql.Text := Sql.Text + (FWhere.GetWhere);
+          if (FGroup.Count > 0) then
+            Sql.Text := Sql.Text + (FGroup.Text);
+          if (FOrder.Count > 0) then
+            Sql.Text := Sql.Text + (FOrder.Text);
       end;
       soInsert:
       begin
@@ -546,7 +605,7 @@ begin
       soUpdate:
       begin
         Sql.Text := Format(UPDATE, [FFrom.Table]);
-        Sql.Text := Sql.Text + StringReplace(StringReplace(FFields.CommaText, '"', '', [rfReplaceAll]), ',', ','+#13#10, [rfReplaceAll]);
+        Sql.Text := Sql.Text + StringReplace(FFields.CommaText, '"', '', [rfReplaceAll]);
         if FWhere.Count > 0 then
           Sql.Text := Sql.Text + (FWhere.GetWhere);
       end;
@@ -565,6 +624,7 @@ end;
 
 function TFluentSQL.Update(Table: string): IUpdateSQL;
 begin
+  DefaultValueEmpty := veExcept;
   FOperation := soUpdate;
   FFrom.Table := Table;
   Result := Self;
@@ -573,6 +633,39 @@ end;
 function TFluentSQL.Where: IWhereSQL;
 begin
   Result := Self;
+end;
+
+function TFluentSQL.Nott: IWhereSQL;
+begin
+  FWhere.Nott := True;
+  Result := Self;
+end;
+
+function TFluentSQL.Between(Value: Variant; MinField, MaxField: String): IWhereSQL;
+begin
+  FWhere.CatSQLAnd(Value, MinField, MaxField);
+  Result := Self;
+end;
+
+function TFluentSQL.IInsertSQL_IfThen(Condition: Boolean): IInsertSQL;
+begin
+  Result := Self;
+  FInsertInCondition := True;
+  FInsertConditon := Condition;
+end;
+
+function TFluentSQL.IUpdateSQL_IfThen(Condition: Boolean): IUpdateSQL;
+begin
+  Result := Self;
+  FUpdateInCondition := True;
+  FUpdateConditon := Condition;
+end;
+
+function TFluentSQL.GetValueEmpty(ValueEmpty: TValueEmpty): TValueEmpty;
+begin
+  Result := ValueEmpty;
+  if ValueEmpty = veDefault then
+    Result := DefaultValueEmpty;
 end;
 
 { TFrom }
@@ -597,6 +690,16 @@ end;
 class function TSQL.Select(Fields: string): ISelectSQL;
 begin
   Result := TFluentSQL.Create.Select(Fields);
+end;
+
+class function TSQL.UnionAll(SQL: string): IUnion;
+begin
+  Result := TUnion.Create.UnionAll(SQL);
+end;
+
+class function TSQL.UnionAll(Condition: Boolean; SQL: String): IUnion;
+begin
+  Result := TUnion.Create.UnionAll(Condition, SQL);
 end;
 
 class function TSQL.Update(Table: string): IUpdateSQL;
